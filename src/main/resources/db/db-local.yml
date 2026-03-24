@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    # H2 인메모리 DB 설정 (MySQL 문법 호환 모드)
+    url: jdbc:h2:mem:base_payment;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;INIT=RUNSCRIPT FROM 'classpath:db/h2/schema.sql'\;RUNSCRIPT FROM 'classpath:db/h2/data.sql'
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+    hikari:
+      maximum-pool-size: 10
+
+  h2:
+    console:
+      enabled: true        # H2 웹 콘솔 활성화
+      path: /h2-console    # 접속 경로
+      settings:
+        web-allow-others: true
+
+# H2 초기화 스크립트 위치 지정
+sql:
+  init:
+    mode: always # 애플리케이션 기동 시 항상 스크립트 실행
+    schema-locations: classpath:db/h2/schema.sql
+    data-locations: classpath:db/h2/data.sql

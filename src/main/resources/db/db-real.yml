@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/localdb}
+    username: ${DB_USER:localuser}
+    password: ${DB_PASS:localpass}
+    hikari:
+      maximum-pool-size: 10
+      max-lifetime: 580000 # DB의 wait_timeout보다 약간 짧게 설정하여 유실 방지
+      connection-test-query: SELECT 1
+  cache:
+    jcache:
+      config: classpath:ehcache/ehcache-dev.xml

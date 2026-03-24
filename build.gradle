@@ -1,0 +1,90 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.4'
+    id 'io.spring.dependency-management' version '1.1.5'
+    // [보안] OWASP 오픈소스 취약점 스캐너 플러그인
+    id 'org.owasp.dependencycheck' version '9.0.9'
+}
+
+group = 'com.github.shkim.base'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = '21'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // ==========================================
+    // 1. Core & Web & View
+    // ==========================================
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'  // 상태 모니터링용 (선택)
+    implementation 'org.springframework.boot:spring-boot-starter-validation' // @Valid 파라미터 검증용
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'  // UI/View 공통 에러 페이지
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
+
+    // ==========================================
+    // 2. Database & MyBatis
+    // ==========================================
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+    runtimeOnly 'com.mysql:mysql-connector-j' // (MySQL 기준) 실제 운영 환경 DB에 맞게 변경 가능
+    runtimeOnly 'com.h2database:h2' // H2 Database (로컬 테스트용)
+
+    // ==========================================
+    // 3. Cache (Ehcache 3 + JCache 표준 API)
+    // ==========================================
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'javax.cache:cache-api:1.1.1'
+    implementation 'org.ehcache:ehcache:3.10.8'
+
+    // ==========================================
+    // 4. Redis
+    // ==========================================
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'com.github.codemonstur:embedded-redis:1.4.3' // Embedded Redis (로컬 테스트용 내장 레디스)
+
+    // ==========================================
+    // 5. Security & Utils
+    // ==========================================
+    implementation 'org.jsoup:jsoup:1.17.2' // [보안] XSS 방어 (Form/Parameter 데이터 정제)
+    implementation 'org.apache.commons:commons-text:1.15.0' // [보안] Jackson JSON 응답 XSS 이스케이프용
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // ==========================================
+    // 6. Test
+    // ==========================================
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.3'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// ==========================================
+// [보안] OWASP Dependency Check 스캐너 설정
+// ==========================================
+dependencyCheck {
+    // CVSS(취약점 위험도 점수)가 7.0(High) 이상인 취약한 라이브러리가 발견되면 즉시 빌드 실패 처리
+    failBuildOnCVSS = 7.0
+
+    // 빌드 후 build/reports/dependency-check-report.html 형태로 보기 편한 리포트 생성
+    format = 'HTML'
+
+    // (옵션) 오탐(False Positive)으로 판명된 취약점을 예외 처리할 때 사용하는 파일 경로
+    // suppressionFile = 'config/owasp/suppressions.xml'
+}

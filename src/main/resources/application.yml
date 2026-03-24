@@ -1,0 +1,102 @@
+# ===================================================================
+# [Base Payment] 전역 애플리케이션 환경 설정 (Global Configuration)
+# ===================================================================
+
+spring:
+  application:
+    name: base-payment
+
+  # 무중단 배포를 위한 우아한 종료(Graceful Shutdown) 대기 시간
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+  # 1. 프로파일 및 환경 분리 설정
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local} # 실행 환경 (local, dev, real)
+    group:
+      # local 프로파일 실행 시 classpath:db/db-local.yml 파일도 함께 로드
+      local: local, db-local
+
+  config:
+    import:
+      - optional:classpath:db/db-${spring.profiles.active}.yml
+
+  # 2. 다국어 지원 설정
+  messages:
+    basename: i18n/messages
+    encoding: UTF-8
+    fallback-to-system-locale: false # 시스템 로케일에 의존하지 않고 무조건 basename을 따름
+
+  # 3. Redis 설정 (API 멱등성 분산 락 및 세션 관리용)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      # password: your_password (운영 환경 시 추가)
+
+# ===================================================================
+# 서버 및 Tomcat 내장 WAS 설정 (안정성 & 보안)
+# ===================================================================
+server:
+  shutdown: graceful # 기존 요청을 처리한 후 안전하게 서버 종료
+  server-header: ""  # 보안을 위해 응답 헤더에서 서버 정보(Tomcat 등) 은닉
+  error:
+    include-stacktrace: never # 에러 발생 시 클라이언트에게 스택 트레이스 노출 방지
+  tomcat:
+    accesslog:
+      enabled: true
+      directory: logs/tomcat
+      prefix: access_log_
+      suffix: .log
+      rotate: true
+      max-days: 30
+      # %D: 처리 소요 시간(ms) 포함
+      pattern: "%h %l %u %t \"%r\" %s %b %D"
+
+# ===================================================================
+# MyBatis 설정 (DB 매퍼)
+# ===================================================================
+mybatis:
+  # 도메인별(site, auth, txn, common)로 분리된 모든 XML 매퍼를 스캔
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    # 스네이크 케이스(merchant_id)를 카멜 케이스(merchantId)로 자동 매핑
+    map-underscore-to-camel-case: true
+
+# ===================================================================
+# 커스텀 KMS 프로퍼티 설정 (KmsProperties.java record에 자동 바인딩)
+# ===================================================================
+app:
+  kms:
+    server-url: "https://kms.internal.server/api/keys"
+    key-sets:
+      pg: "KSET_PG_001"
+      cert: "KSET_CERT_002"
+
+cors:
+  allowed-origins: "http://localhost:3000" # 프론트엔드 연동 도메인 허용
+
+health:
+  check:
+    file:
+      path: ./l4check.txt # L4 로드밸런서 헬스체크용 물리 파일 경로
+
+# ===================================================================
+# Resilience4j 서킷 브레이커 설정 (대규모 트래픽 장애 격리)
+# ===================================================================
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true # Actuator의 /health 엔드포인트에 서킷 상태 노출
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10         # 최근 10번의 호출을 기준으로 실패율 계산
+        failure-rate-threshold: 50      # 실패율 50% 이상 시 서킷 Open(차단)
+        slow-call-rate-threshold: 50    # 지연율 50% 이상 시 서킷 Open
+        slow-call-duration-threshold: 3000ms # 3초 이상 걸리면 지연(Slow)으로 간주
+        wait-duration-in-open-state: 10000ms # 서킷 Open 후 10초 대기 후 Half-Open 전환
+        permitted-number-of-calls-in-half-open-state: 3 # Half-Open 시 3번의 테스트 호출 허용
+        minimum-number-of-calls: 5      # 최소 5번은 호출되어야 통계 계산 시작
+    instances:
+      externalApi: # 범용 외부 통신용 인스턴스 (노티 발송 등에 사용)
+        base-config: default

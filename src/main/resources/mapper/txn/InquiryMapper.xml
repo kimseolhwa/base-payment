@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.github.shkim.base.inquiry.mapper.InquiryMapper">
+
+    <select id="selectPaymentDetail" parameterType="com.github.shkim.base.inquiry.dto.InquiryRequests$PaymentDetailReq" resultType="java.util.Map">
+        SELECT
+            merchant_id
+             , order_id
+             , amount
+             , approval_code
+             , card_no
+             , status
+             , req_dt
+        FROM tb_payment_history
+        WHERE merchant_id = #{merchantId}
+          AND order_id = #{orderId}
+    </select>
+
+</mapper>
