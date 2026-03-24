@@ -22,14 +22,22 @@ public class NotiService {
     @Transactional
     public NotiResponse processAndSendNoti(NotiRequests.SendReq request) {
         // 1. DB에 노티 발송 시도 이력 적재
-        notiMapper.insertNotiHistory(request);
+        saveNotiHistory(request);
 
-        // 2. 외부 API 통신 (프록시를 통과하므로 서킷 브레이커가 정상 작동함!)
+        // 2. 외부 API 통신 (서킷 브레이커 작동)
         String externalResult = externalNotiClient.callExternalApi(request);
 
         return NotiResponse.builder()
                 .resCd("0000")
                 .resMsg("노티 처리가 완료되었습니다. (결과: " + externalResult + ")")
                 .build();
+    }
+
+    @Transactional // DB 작업에만 트랜잭션을 적용
+    public void saveNotiHistory(NotiRequests.SendReq req) {
+        int result = notiMapper.insertNotiHistory(req);
+        if (result <= 0) {
+            throw new RuntimeException("노티 이력 적재 실패");
+        }
     }
 }

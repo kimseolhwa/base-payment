@@ -75,7 +75,11 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public Object handleAllException(Exception e, HttpServletRequest request) {
-        log.error("[System Error] {}", e.getMessage(), e);
+        String traceId = (String) request.getAttribute("traceId");
+
+        log.error("[System Error] TraceID: {} | URI: {} {} | Message: {}",
+                traceId, request.getMethod(), request.getRequestURI(), e.getMessage(), e);
+
         return routeErrorResponse(request, HttpStatus.INTERNAL_SERVER_ERROR, "9999", "서버 장애가 발생했습니다.", "error/500");
     }
 
