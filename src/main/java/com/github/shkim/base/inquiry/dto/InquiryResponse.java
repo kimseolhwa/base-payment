@@ -1,5 +1,6 @@
 package com.github.shkim.base.inquiry.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
 /**
@@ -13,4 +14,14 @@ import lombok.Builder;
  * @param data 실제 비즈니스 응답 데이터 객체 (또는 Map)
  */
 @Builder
-public record InquiryResponse(String resCd, String resMsg, Object data) {}
+@Schema(description = "결제 조회 공통 응답 DTO")
+public record InquiryResponse(
+        @Schema(description = "결과 상태 코드", example = "0000")
+        String resCd, 
+        
+        @Schema(description = "결과 상세 메시지", example = "정상 처리되었습니다.")
+        String resMsg, 
+        
+        @Schema(description = "실제 비즈니스 응답 데이터")
+        Object data
+) {}
