@@ -55,7 +55,7 @@
         </root>
     </springProfile>
 
-    <springProfile name="real, dr">
+    <springProfile name="real">
         <root level="INFO">
             <appender-ref ref="CONSOLE" />
             <appender-ref ref="INFO_FILE" />

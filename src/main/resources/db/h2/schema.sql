@@ -1,5 +1,5 @@
 -- 애플리케이션 기동 시 테이블 자동 생성
-CREATE TABLE IF NOT EXISTS tb_payment_history (
+CREATE TABLE IF NOT EXISTS payment_history (
     merchant_id VARCHAR(50) NOT NULL,
     order_id VARCHAR(50) NOT NULL,
     amount DECIMAL(15, 2) NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS tb_payment_history (
  );
 
 -- 노티 발송 이력 테이블
-CREATE TABLE IF NOT EXISTS tb_noti_history (
+CREATE TABLE IF NOT EXISTS noti_history (
    seq BIGINT AUTO_INCREMENT PRIMARY KEY,
    merchant_id VARCHAR(50) NOT NULL,
     order_id VARCHAR(50) NOT NULL,

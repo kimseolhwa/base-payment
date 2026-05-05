@@ -1,5 +1,7 @@
 package com.github.shkim.base.inquiry.service;
 
+import com.github.shkim.base.common.exception.ResponseCode;
+import com.github.shkim.base.common.util.MessageUtils;
 import com.github.shkim.base.inquiry.dto.InquiryRequests;
 import com.github.shkim.base.inquiry.dto.InquiryResponse;
 import com.github.shkim.base.inquiry.mapper.InquiryMapper;
@@ -15,6 +17,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -23,6 +26,9 @@ class InquiryServiceTest {
 
     @Mock
     private InquiryMapper inquiryMapper;
+
+    @Mock
+    private MessageUtils messageUtils; // MessageUtils Mock 추가
 
     @InjectMocks
     private InquiryService inquiryService;
@@ -36,22 +42,27 @@ class InquiryServiceTest {
         Map<String, Object> mockDbResult = new HashMap<>();
         mockDbResult.put("AMOUNT", 50000);
         mockDbResult.put("STATUS", "SUCCESS");
+        // 복호화 테스트를 위해 암호화된 더미 카드번호 추가
+        mockDbResult.put("card_no", "[ENCRYPTED_WITH_null]12345678");
 
-        // 매퍼가 요청 DTO 객체를 파라미터로 받아 호출될 때, 준비된 Mock 데이터를 반환하도록 설정
+        // 매퍼 및 MessageUtils Mocking
         given(inquiryMapper.selectPaymentDetail(any(InquiryRequests.PaymentDetailReq.class))).willReturn(mockDbResult);
+        given(messageUtils.getMessage(eq(ResponseCode.SUCCESS.getMessageKey()))).willReturn("Processed successfully.");
 
         // when
         InquiryResponse response = inquiryService.getPaymentDetail(req);
 
         // then
-        assertThat(response.resCd()).isEqualTo("0000");
+        assertThat(response.resCd()).isEqualTo(ResponseCode.SUCCESS.getCode());
+        assertThat(response.resMsg()).isEqualTo("Processed successfully.");
 
-        // 응답 객체의 data 필드가 최상위 Object 타입이므로, 내부 상태를 검증하기 위해 Map으로 안전하게 형변환(Casting)
+        // 응답 객체의 data 필드 검증
         @SuppressWarnings("unchecked")
         Map<String, Object> responseData = (Map<String, Object>) response.data();
         assertThat(responseData.get("STATUS")).isEqualTo("SUCCESS");
+        // 복호화 결과(암호화 접두어가 제거되었는지) 확인
+        assertThat(responseData.get("card_no")).isEqualTo("12345678");
 
-        // 매퍼의 조회 메서드가 해당 요청 DTO 객체와 함께 정확히 1번 호출되었는지 행위 검증
         verify(inquiryMapper).selectPaymentDetail(req);
     }
 }

@@ -4,7 +4,7 @@
 <mapper namespace="com.github.shkim.base.noti.mapper.NotiMapper">
 
     <insert id="insertNotiHistory" parameterType="com.github.shkim.base.noti.dto.NotiRequests$SendReq">
-        INSERT INTO tb_noti_history (
+        INSERT INTO noti_history (
                                       merchant_id
                                     , order_id
                                     , amount

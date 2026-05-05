@@ -12,7 +12,7 @@
              , card_no
              , status
              , req_dt
-        FROM tb_payment_history
+        FROM payment_history
         WHERE merchant_id = #{merchantId}
           AND order_id = #{orderId}
     </select>

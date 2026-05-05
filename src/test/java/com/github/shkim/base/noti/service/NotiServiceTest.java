@@ -1,5 +1,7 @@
 package com.github.shkim.base.noti.service;
 
+import com.github.shkim.base.common.exception.ResponseCode;
+import com.github.shkim.base.common.util.MessageUtils;
 import com.github.shkim.base.noti.dto.NotiRequests;
 import com.github.shkim.base.noti.dto.NotiResponse;
 import com.github.shkim.base.noti.mapper.NotiMapper;
@@ -14,6 +16,7 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -25,6 +28,9 @@ class NotiServiceTest {
 
     @Mock
     private ExternalNotiClient externalNotiClient; // 가짜 외부 통신 클라이언트
+
+    @Mock
+    private MessageUtils messageUtils; // MessageUtils Mock 추가
 
     @InjectMocks
     private NotiService notiService; // 테스트 대상
@@ -39,13 +45,16 @@ class NotiServiceTest {
         given(notiMapper.insertNotiHistory(any(NotiRequests.SendReq.class))).willReturn(1);
         // 외부 통신 결과 문자열 반환 조작
         given(externalNotiClient.callExternalApi(any(NotiRequests.SendReq.class))).willReturn("EXTERNAL_API_SUCCESS");
+        // MessageUtils 조작
+        given(messageUtils.getMessage(eq(ResponseCode.SUCCESS.getMessageKey()))).willReturn("Processed successfully.");
 
         // when
         NotiResponse response = notiService.processAndSendNoti(req);
 
         // then
-        assertThat(response.resCd()).isEqualTo("0000");
-        assertThat(response.resMsg()).contains("EXTERNAL_API_SUCCESS"); // 응답 메시지에 결과가 포함되었는지 확인
+        assertThat(response.resCd()).isEqualTo(ResponseCode.SUCCESS.getCode());
+        assertThat(response.resMsg()).contains("EXTERNAL_API_SUCCESS"); // 외부 통신 결과
+        assertThat(response.resMsg()).startsWith("Processed successfully."); // 다국어 메시지
 
         // 순서대로 각각 1번씩 호출되었는지 검증
         verify(notiMapper).insertNotiHistory(req);
