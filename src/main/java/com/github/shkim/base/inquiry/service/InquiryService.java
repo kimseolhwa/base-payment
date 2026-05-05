@@ -1,12 +1,14 @@
 package com.github.shkim.base.inquiry.service;
 
 import com.github.shkim.base.common.exception.DataNotFoundException;
+import com.github.shkim.base.common.exception.ResponseCode;
+import com.github.shkim.base.common.util.CryptoUtils;
+import com.github.shkim.base.common.util.MessageUtils;
 import com.github.shkim.base.inquiry.dto.InquiryRequests;
 import com.github.shkim.base.inquiry.dto.InquiryResponse;
 import com.github.shkim.base.inquiry.mapper.InquiryMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -16,7 +18,7 @@ import java.util.Map;
 /**
  * DB 조회 비즈니스 로직을 전담하는 서비스 클래스.
  * <p>
- * MyBatis Mapper 연동 및 캐싱(Ehcache)을 통한 응답 속도 최적화 수행
+ * MyBatis Mapper 연동을 통한 데이터 단건 조회 수행
  * </p>
  */
 @Slf4j
@@ -25,11 +27,12 @@ import java.util.Map;
 public class InquiryService {
 
     private final InquiryMapper inquiryMapper;
+    private final MessageUtils messageUtils;
 
     /**
-     * 결제 상세 내역 단건 조회 및 로컬 캐싱 수행.
+     * 결제 상세 내역 단건 조회 수행.
      * <p>
-     * @Cacheable 적용으로 동일한 주문 ID 반복 조회 시 DB 부하 차단
+     * (캐시 무효화 정책이 없어 @Cacheable 제거, 항상 DB 직접 조회하도록 변경)
      * </p>
      *
      * @param request 결제 조회 요청 파라미터 레코드
@@ -37,7 +40,6 @@ public class InquiryService {
      * @throws DataNotFoundException DB 조회 결과가 없을 경우
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = "paymentCache", key = "#request.orderId()", unless = "#result == null")
     public InquiryResponse getPaymentDetail(InquiryRequests.PaymentDetailReq request) {
         log.info("[Inquiry Service] DB 실제 조회 실행 - orderId: {}", request.orderId());
 
@@ -48,11 +50,17 @@ public class InquiryService {
             throw new DataNotFoundException("해당 주문 ID(" + request.orderId() + ")의 결제 내역이 존재하지 않습니다.");
         }
 
-        // TODO: CryptoUtils.decrypt(...) 등을 활용하여 개인정보(카드번호 등) 복호화 로직 추가 지점
+        // CryptoUtils를 활용하여 카드번호(card_no) 등 민감 정보 복호화 로직 적용
+        if (resultData.containsKey("card_no") && resultData.get("card_no") != null) {
+            String encryptedCardNo = String.valueOf(resultData.get("card_no"));
+            // 도메인 키 "payment"는 예시이며, 실제 KMS 키에 맞게 조정 필요
+            String decryptedCardNo = CryptoUtils.decrypt("payment", encryptedCardNo);
+            resultData.put("card_no", decryptedCardNo);
+        }
 
         return InquiryResponse.builder()
-                .resCd("0000")
-                .resMsg("정상 처리되었습니다.")
+                .resCd(ResponseCode.SUCCESS.getCode())
+                .resMsg(messageUtils.getMessage(ResponseCode.SUCCESS.getMessageKey()))
                 .data(resultData)
                 .build();
     }
