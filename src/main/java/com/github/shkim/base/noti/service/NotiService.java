@@ -1,5 +1,7 @@
 package com.github.shkim.base.noti.service;
 
+import com.github.shkim.base.common.exception.ResponseCode;
+import com.github.shkim.base.common.util.MessageUtils;
 import com.github.shkim.base.noti.dto.NotiRequests;
 import com.github.shkim.base.noti.dto.NotiResponse;
 import com.github.shkim.base.noti.mapper.NotiMapper;
@@ -15,6 +17,7 @@ public class NotiService {
 
     private final NotiMapper notiMapper;
     private final ExternalNotiClient externalNotiClient; // 분리된 클라이언트 주입
+    private final MessageUtils messageUtils;
 
     /**
      * DB에 발송 이력을 적재하고, 서킷 브레이커를 통해 외부 통신 수행.
@@ -28,8 +31,8 @@ public class NotiService {
         String externalResult = externalNotiClient.callExternalApi(request);
 
         return NotiResponse.builder()
-                .resCd("0000")
-                .resMsg("노티 처리가 완료되었습니다. (결과: " + externalResult + ")")
+                .resCd(ResponseCode.SUCCESS.getCode())
+                .resMsg(messageUtils.getMessage(ResponseCode.SUCCESS.getMessageKey()) + " (결과: " + externalResult + ")")
                 .build();
     }
 
