@@ -50,6 +50,13 @@ public class GlobalExceptionHandler {
         return createJsonResponse(HttpStatus.CONFLICT, ResponseCode.CONFLICT.getCode(), resMsg);
     }
 
+    // 처리율 제한 초과 예외 처리 (429 Too Many Requests)
+    @ExceptionHandler(RateLimitException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimitException(RateLimitException e, HttpServletRequest request) {
+        log.warn("[API Rate Limit Exceeded] {}", e.getMessage());
+        return createJsonResponse(HttpStatus.TOO_MANY_REQUESTS, "4290", "Too many requests. Please try again later.");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleAllException(Exception e, HttpServletRequest request) {
         String traceId = (String) request.getAttribute("traceId");
