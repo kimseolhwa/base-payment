@@ -4,6 +4,8 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.5'
     // [보안] OWASP 오픈소스 취약점 스캐너 플러그인
     id 'org.owasp.dependencycheck' version '9.0.9'
+    // Jib 플러그인 (컨테이너화)
+    id 'com.google.cloud.tools.jib' version '3.4.0'
 }
 
 group = 'com.github.shkim.base'
@@ -33,14 +35,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation' // @Valid 파라미터 검증용
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'  // UI/View 공통 에러 페이지
     implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
-    implementation 'org.apache.httpcomponents.client5:httpclient5'           // RestClient 커넥션 풀 사용을 위한 의존성
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'     // RestClient 커넥션 풀 사용을 위한 의존성 (최신화)
 
     // ==========================================
     // 2. Database & MyBatis
     // ==========================================
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
     runtimeOnly 'com.mysql:mysql-connector-j' // (MySQL 기준) 실제 운영 환경 DB에 맞게 변경 가능
-    runtimeOnly 'com.h2database:h2' // H2 Database (로컬 테스트용)
+    runtimeOnly 'com.h2database:h2:2.2.224' // H2 Database (로컬 테스트용, 최신 안정화 버전 명시)
 
     // ==========================================
     // 3. Cache (Ehcache 3 + JCache 표준 API)
@@ -50,21 +52,26 @@ dependencies {
     implementation 'org.ehcache:ehcache:3.10.8'
 
     // ==========================================
-    // 4. Redis
+    // 4. Redis & Rate Limiting
     // ==========================================
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'com.github.codemonstur:embedded-redis:1.4.3' // Embedded Redis (로컬 테스트용 내장 레디스)
+    implementation 'com.bucket4j:bucket4j-core:8.10.1'           // API Rate Limiting (처리율 제한)
+    implementation 'com.bucket4j:bucket4j-redis:8.10.1'          // Bucket4j Redis 지원
 
     // ==========================================
     // 5. Security & Utils
     // ==========================================
-    implementation 'org.jsoup:jsoup:1.17.2' // [보안] XSS 방어 (Form/Parameter 데이터 정제)
-    implementation 'org.apache.commons:commons-text:1.15.0' // [보안] Jackson JSON 응답 XSS 이스케이프용
+    implementation 'org.springframework.boot:spring-boot-starter-security' // Spring Security 의존성
+    implementation 'org.jsoup:jsoup:1.18.1' // [보안] XSS 방어 (Form/Parameter 데이터 정제)
+    implementation 'org.apache.commons:commons-text:1.12.0' // [보안] Jackson JSON 응답 XSS 이스케이프용 (최신화)
+    // commons-text 등에서 당겨오는(Transitive) commons-lang3의 취약점(CVE-2025-48924 등) 방어를 위해 직접 안전한 버전(3.14.0 이상) 명시적 추가
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
 
     // ==========================================
     // 6. OpenAPI (Swagger)
     // ==========================================
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.4.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0' // 최신 안정화 버전
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
@@ -75,10 +82,29 @@ dependencies {
     // ==========================================
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.3'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+// ==========================================
+// Jib 컨테이너 설정
+// ==========================================
+jib {
+    from {
+        image = 'eclipse-temurin:21-jre-alpine' // Java 21 경량 베이스 이미지
+    }
+    to {
+        image = "base-payment-app:${project.version}" // 빌드될 이미지 이름
+        tags = ['latest']
+    }
+    container {
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+        jvmFlags = ['-Xms512m', '-Xmx512m', '-Dspring.profiles.active=local']
+        ports = ['8080']
+    }
 }
 
 // ==========================================
