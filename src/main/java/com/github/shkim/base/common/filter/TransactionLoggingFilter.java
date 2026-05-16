@@ -8,6 +8,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
@@ -59,7 +60,7 @@ public class TransactionLoggingFilter extends OncePerRequestFilter {
      * @throws IOException 입출력 처리 중 오류 발생 시
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
         // 1. 요청 래퍼 적용 (Body 미리 읽기)
@@ -146,7 +147,7 @@ public class TransactionLoggingFilter extends OncePerRequestFilter {
      */
     private String extractMerchantId(CachedBodyHttpServletRequest request) {
         String merchantId = request.getParameter("merchantId");
-        if (!StringUtils.hasText(merchantId)) merchantId = request.getParameter("merchant_id");;
+        if (!StringUtils.hasText(merchantId)) merchantId = request.getParameter("merchant_id");
 
         if (!StringUtils.hasText(merchantId) && request.getContentType() != null && request.getContentType().contains("application/json")) {
             try {

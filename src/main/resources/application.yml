@@ -52,6 +52,7 @@ server:
       max-days: 30
       # %D: 처리 소요 시간(ms) 포함
       pattern: "%h %l %u %t \"%r\" %s %b %D"
+      file-date-format: yyyy-MM-dd
 
 # ===================================================================
 # MyBatis 설정 (DB 매퍼)
