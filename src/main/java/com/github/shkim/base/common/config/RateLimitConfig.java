@@ -23,22 +23,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class RateLimitConfig implements WebMvcConfigurer {
 
     private final RateLimitInterceptor rateLimitInterceptor;
-    private final RedisClient redisClient;
-
-    /**
-     * Bucket4j 분산 환경(Redis) 처리를 위한 ProxyManager 빈 생성.
-     */
-    @Bean
-    public ProxyManager<String> bucket4jProxyManager() {
-        StatefulRedisConnection<String, byte[]> connection = redisClient.connect(
-                RedisCodec.of(StringCodec.UTF8, ByteArrayCodec.INSTANCE)
-        );
-
-        // Bucket4j 8.x 이상에서는 withExpirationStrategy() 대신
-        // 기본적으로 BucketConfiguration(Bandwidth)을 분석하여 TTL을 자동 관리합니다.
-        return LettuceBasedProxyManager.builderFor(connection)
-                .build();
-    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
