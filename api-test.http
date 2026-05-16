@@ -1,0 +1,38 @@
+### 1. [성공] 정상적인 Authorization 헤더 포함 요청 (200 OK)
+POST http://localhost:8080/api/v1/inquiry/payment
+Content-Type: application/json
+Authorization: Bearer sec_test_abc123
+
+{
+  "merchantId": "TEST_M001",
+  "orderId": "ORD202603230001"
+}
+
+### 2. [실패] Authorization 헤더 누락 요청 (401 Unauthorized)
+POST http://localhost:8080/api/v1/inquiry/payment
+Content-Type: application/json
+
+{
+  "merchantId": "TEST_M001",
+  "orderId": "ORD202603230001"
+}
+
+### 3. [실패] 유효하지 않은 Authorization 헤더 포함 요청 (403 Forbidden)
+POST http://localhost:8080/api/v1/inquiry/payment
+Content-Type: application/json
+Authorization: Bearer invalid_secret_key_123
+
+{
+  "merchantId": "TEST_M001",
+  "orderId": "ORD202603230001"
+}
+
+### 4. [실패] Rate Limit (처리율 제한) 테스트용 (위 1번 성공 요청을 1초 안에 10번 이상 따닥 클릭하면 429 에러 발생)
+POST http://localhost:8080/api/v1/inquiry/payment
+Content-Type: application/json
+Authorization: Bearer sec_test_abc123
+
+{
+  "merchantId": "TEST_M001",
+  "orderId": "ORD202603230001"
+}

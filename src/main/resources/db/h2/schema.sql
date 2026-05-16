@@ -19,3 +19,12 @@ CREATE TABLE IF NOT EXISTS noti_history (
     status VARCHAR(10),
     send_dt TIMESTAMP
  );
+
+-- 가맹점(Merchant) 정보 테이블 (API 인증용)
+CREATE TABLE IF NOT EXISTS merchant_info (
+    merchant_id VARCHAR(50) PRIMARY KEY,
+    secret_key VARCHAR(100) NOT NULL,
+    merchant_name VARCHAR(100) NOT NULL,
+    status VARCHAR(10) DEFAULT 'ACTIVE',
+    reg_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
